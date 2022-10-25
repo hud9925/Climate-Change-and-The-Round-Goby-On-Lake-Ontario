@@ -1,0 +1,11 @@
+---
+title: "First ggplot"
+author: "Daniel"
+---
+
+Hello! This is our first plot
+
+---{r}
+library(ggplot)
+---
+
