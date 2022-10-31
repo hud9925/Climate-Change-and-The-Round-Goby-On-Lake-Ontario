@@ -36,6 +36,21 @@ Link:  https://www.sciencebase.gov/catalog/item/62f4fd46d34eacf53973a841
 
 ## Data Exploration 
 
+*Note: Don't forget to set your own working directory*
+```{r Data Cleaning}
+fish.data.raw <- read.csv("TrawlCatch_SpringPreyfishBottomTrawl.csv")
+head(fish.data.raw)
+fish.data.raw <- fish.data.raw %>% 
+  mutate(year=as.factor(year)) #didn't want year to be a continuous variable, I wanted them as discrete values.
+fish.data <- fish.data.raw %>% 
+  filter(!is.na(fishingTemperature_C), !is.na(latitude), !is.na(longitude), species==c("Lake trout", ""))#I am removing any datapoints where the temperature, latitude, or longitude is not collected because they will not be useful for the questions we are asking unless we have those data
+```
+```{r Temperature by date}
+#This is to set up a graph for the temperature values collected at each date 
+unique(fish.data$year) #Checking the years to make sure we have the right dataset - we have data from 1997 to 2022
+#M: the dates should be converted into a more readable format. I just don't know how to do that so I need to ask for help.
+ggplot(fish.data, aes(x=opDate, y=fishingTemperature_C)) + geom_point(alpha=0.1) + geom_smooth() + labs(title="Temperature values by date", x="Date (YYYYMMDD)", y="Temperature (Degrees C)") + theme(plot.title = element_text(hjust = 0.5)) #I did smooth just to see it, but it's not a very meaningful line 
+```
 
 ## Analysis 
 
