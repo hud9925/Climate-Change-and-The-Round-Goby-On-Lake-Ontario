@@ -36,20 +36,101 @@ Link:  https://www.sciencebase.gov/catalog/item/62f4fd46d34eacf53973a841
 
 ## Data Exploration 
 
-*Note: Don't forget to set your own working directory*
-```{r Data Cleaning}
+*Note: Don't forget to set your working directory and make sure that they data is in it under the right file name*
+###Setup
+```{r Setup}
+library(ggplot2)
+library(dplyr)
+library(ggfortify)
+library(tidyverse)
+```
+```{r Cleaning Data}
 fish.data.raw <- read.csv("TrawlCatch_SpringPreyfishBottomTrawl.csv")
 head(fish.data.raw)
 fish.data.raw <- fish.data.raw %>% 
-  mutate(year=as.factor(year)) #didn't want year to be a continuous variable, I wanted them as discrete values.
+  mutate(year=as.factor(year)) #didn't want year to be a continuous variable, I wanted them as discrete values not continuous.
 fish.data <- fish.data.raw %>% 
-  filter(!is.na(fishingTemperature_C), !is.na(latitude), !is.na(longitude), species==c("Lake trout", ""))#I am removing any datapoints where the temperature, latitude, or longitude is not collected because they will not be useful for the questions we are asking unless we have those data
+  filter(!is.na(fishingTemperature_C), !is.na(latitude), !is.na(longitude), commonName!= "No fish caught", commonName!= "Miscellaneous or unidentified species", commonName!=  "Unidentified coregonid", commonName!= "Unidentified minnows",  commonName!= "Uninidentified redhorse")#I am removing any datapoints where the temperature, latitude, or longitude is not collected because they will not be useful for the questions we are asking unless we have those data
+#I am also removing unidentified or misc. fishes
 ```
-```{r Temperature by date}
-#This is to set up a graph for the temperature values collected at each date 
-unique(fish.data$year) #Checking the years to make sure we have the right dataset - we have data from 1997 to 2022
-#M: the dates should be converted into a more readable format. I just don't know how to do that so I need to ask for help.
-ggplot(fish.data, aes(x=opDate, y=fishingTemperature_C)) + geom_point(alpha=0.1) + geom_smooth() + labs(title="Temperature values by date", x="Date (YYYYMMDD)", y="Temperature (Degrees C)") + theme(plot.title = element_text(hjust = 0.5)) #I did smooth just to see it, but it's not a very meaningful line 
+###Choosing focal species
+```{r Choosing Native Species}
+fish.data %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n)) #this helped us see how many observations we had per species 
+fish.list <- as.data.frame(unique(fish.data$commonName)) #this just made a data frame of the list so we could check if each one was exotic or native
+fish.data.exonat <- fish.data %>% #Here we made a new column that marks each fish species as exotic or native. This was based on a few papers listed in our methods. We did not bother doing this for any fishes where there were less than 200 observations because they would not be used for this analysis anyway. We also did not do this for non-fish species as they are not the focus of this analysis. 
+  mutate(inv.status = case_when(
+    endsWith(commonName, "Alewife") ~ "exotic",
+    endsWith(commonName, "Sea lamprey") ~ "exotic",
+    endsWith(commonName, "Chinook salmon") ~ "exotic",
+    endsWith(commonName, "Rainbow trout (Steelhead)") ~ "exotic",
+    endsWith(commonName, "Carp") ~ "exotic",
+    endsWith(commonName, "Brown trout") ~ "exotic",
+    endsWith(commonName, "Rainbow smelt") ~ "exotic",
+    endsWith(commonName, "Coho salmon") ~ "exotic",
+    endsWith(commonName, "White perch") ~ "exotic",
+    endsWith(commonName, "Blueback herring") ~ "exotic", 
+    endsWith(commonName, "Chain pickerel") ~ "exotic",
+    endsWith(commonName, "Round goby") ~ "exotic",
+    endsWith(commonName, "Tubenose goby") ~ "exotic",
+    endsWith(commonName, "Threespine stickleback") ~ "native",
+    endsWith(commonName, "Emerald shiner") ~ "native",
+    endsWith(commonName, "Lake whitefish") ~ "native",
+    endsWith(commonName, "Deepwater sculpin") ~ "native",
+    endsWith(commonName, "Lake trout") ~ "native",
+    endsWith(commonName, "Burbot") ~ "native",
+    endsWith(commonName, "Slimy sculpin") ~ "native",
+    endsWith(commonName, "Emerald shiner") ~ "native",
+    endsWith(commonName, "Cisco (lake herring)") ~ "native",
+    endsWith(commonName, "Whitefishes") ~ "native",
+    endsWith(commonName, "Johnny darter") ~ "native",  
+    endsWith(commonName, "Trout-perch") ~ "native", 
+    endsWith(commonName, "Yellow perch") ~ "native", 
+    endsWith(commonName, "Spottail shiner") ~ "native"
+    ))
+fish.data.exonat %>% 
+  filter(is.na(inv.status)) %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n))
+#Checking to see which ones I hadn't researched yet to make sure I did not miss any important ones.
+#Dreissena are mussels and we are only focused on fishes so we will be cutting those out anyway
+#We ignore everything below 200 observations on this list because they do not have enough observations to be included in our data
+fish.data.exonat %>%  #now that we have labeled each species, we can display our native species of interest. 
+  filter(inv.status=="native") %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n))
+#based on this, we can choose only species with more than 300 observations. In this case that means Yellow perch, Threespine stickleback, Deepwater sculpin, Trout-perch, Johnny darter, Lake trout, and Slimy sculpin.
+```
+
+Our data for which species were exotic came from here: https://www-sciencedirect-com.myaccess.library.utoronto.ca/science/article/pii/S0380133019301637
+http://www.glfc.org/pubs/TechReports/Tr67.pdf 
+https://librarysearch.library.utoronto.ca/permalink/01UTORONTO_INST/fedca1/cdi_gale_infotracacademiconefile_A484511028 
+
+###Creating cleaned data set
+```{r Cleaning data 2}
+fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested in, including only the species that we are able to look at.
+  filter(commonName=="Yellow perch" | commonName=="Threespine stickleback" | commonName=="Deepwater sculpin" | commonName=="Trout-perch" | commonName=="Johnny darter" | commonName=="Lake trout" | commonName=="Slimy sculpin" | commonName=="Round goby")
+```
+#Plotting temperature
+```{r Temperature Plot}
+unique(fish.data$year) #we have data from 1997 to 2022
+#the dates should be converted into a more readable format. I just don't know how to do that so I need to ask for help.
+
+ggplot(fish.data, aes(x=opDate, y=fishingTemperature_C)) + geom_point(alpha=0.1) + geom_smooth() + labs(title="Temperature values by date", x="Date (YYYYMMDD)", y="Temperature (Degrees C)") + theme(plot.title = element_text(hjust = 0.5)) 
+```
+This graph just shows temperature changes over time. We don't expect them to vary much, but its good to take a look regardless to see if there is variation in temperature at all. There does seem to be variation which will be important for our analyses. Also, I used the clean data because we needed to confirm that there was variation in the data we will actually use, not just in the original data. If, for example, all the temperatures were the same, we likely wouldn't be able to make any conclusions about the temperature ranges of these fishes. 
+```{r Checking temperature effects visually}
+ggplot(fish.data.clean, aes(x=fishingTemperature_C, fill=inv.status)) + geom_histogram(bins=15) + facet_wrap(~commonName) + labs(title="Observed temperature by species", x="Temperature (Degrees C)", y="Count of individuals observed") + theme(plot.title = element_text(hjust = 0.5)) + scale_fill_discrete(name = "Status")
+#plotting the count of observations of each species depending on the temperature.
+```
+Just based on the visual that this graph provides it looks like there's a variety of temperature tolerances among our focal species. It seems like the round goby does not exist at much higher temperatures than the other species. We will still have to run our analysis to confirm this, but there appears to be little difference in temperature tolerance of the round goby in comparison to the other native species. Interestingly, some of these species (like the yellow perch, trout perch, and lake trout) have an even wider temperature range than the round goby. Others, like the slimy sculpin, have a narrower range and seem to be mostly found at one location. It should be noted, as well, that these data are counts so it simply be that the slimy sculpin is just more commonly observed which is why it would have such a narrow peak.
+#Plotting abundance
+```{r}
+#M: we need to graph each species abundance (y axis) against the abundance of the round goby (x axis) so we should have 7 graphs here
 ```
 
 ## Analysis 
