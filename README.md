@@ -142,7 +142,7 @@ This graph just shows temperature changes over time. We don't expect them to var
 ggplot(fish.data.clean, aes(x=fishingTemperature_C, fill=inv.status)) + geom_histogram(bins=15) + facet_wrap(~commonName) + labs(title="Observed temperature by species", x="Temperature (Degrees C)", y="Count of individuals observed") + theme(plot.title = element_text(hjust = 0.5)) + scale_fill_discrete(name = "Status")
 #plotting the count of observations of each species depending on the temperature.
 ```
-![](DataExploration/Plots/DataExploration/Plots/Observed%20Temperature%20by%20species.png)
+![](DataExploration/Plots/Observed%20Temperature%20by%20species.png)
 
 Just based on the visual that this graph provides it looks like there's a variety of temperature tolerances among our focal species. It seems like the round goby does not exist at much higher temperatures than the other species. We will still have to run our analysis to confirm this, but there appears to be little difference in temperature tolerance of the round goby in comparison to the other native species. Interestingly, some of these species (like the yellow perch, trout perch, and lake trout) have an even wider temperature range than the round goby. Others, like the slimy sculpin, have a narrower range and seem to be mostly found at one location. It should be noted, as well, that these data are counts so it simply be that the slimy sculpin is just more commonly observed which is why it would have such a narrow peak.
 
