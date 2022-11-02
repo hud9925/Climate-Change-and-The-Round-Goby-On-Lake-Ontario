@@ -115,6 +115,23 @@ https://librarysearch.library.utoronto.ca/permalink/01UTORONTO_INST/fedca1/cdi_g
 fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested in, including only the species that we are able to look at.
   filter(commonName=="Yellow perch" | commonName=="Threespine stickleback" | commonName=="Deepwater sculpin" | commonName=="Trout-perch" | commonName=="Johnny darter" | commonName=="Lake trout" | commonName=="Slimy sculpin" | commonName=="Round goby")
 ```
+
+###Cleaning: Change the format of date column to YYYY-MM-DD
+```{r}
+fish.data.clean2 <- fish.data.clean
+```
+
+```{r Cleaning data 3}
+library(dplyr)
+fish.data.clean <- fish.data.clean2 %>%
+  group_by(opDate) %>%
+  mutate(opDate = paste0(substr(opDate,1,4), "-", substr(opDate,5,6), "-", substr(opDate,7,8))) %>% 
+  as.data.frame(mutate(opDate = as.character(opDate)))
+
+```
+
+```
+
 #Plotting temperature
 ```{r Temperature Plot}
 unique(fish.data$year) #we have data from 1997 to 2022
