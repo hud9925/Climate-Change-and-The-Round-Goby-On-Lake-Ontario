@@ -36,7 +36,6 @@ Link:  https://www.sciencebase.gov/catalog/item/62f4fd46d34eacf53973a841
 
 ## Data Exploration 
 
-*Note: Don't forget to set your working directory and make sure that they data is in it under the right file name*
 ###Setup
 ```{r Setup}
 library(ggplot2)
@@ -120,7 +119,6 @@ fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested 
 ```{r}
 fish.data.clean2 <- fish.data.clean
 ```
-
 ```{r Cleaning data 3}
 library(dplyr)
 fish.data.clean <- fish.data.clean2 %>%
@@ -129,9 +127,6 @@ fish.data.clean <- fish.data.clean2 %>%
   as.data.frame(mutate(opDate = as.character(opDate)))
 
 ```
-
-```
-
 #Plotting temperature
 ```{r Temperature Plot}
 unique(fish.data$year) #we have data from 1997 to 2022
@@ -139,16 +134,33 @@ unique(fish.data$year) #we have data from 1997 to 2022
 
 ggplot(fish.data, aes(x=opDate, y=fishingTemperature_C)) + geom_point(alpha=0.1) + geom_smooth() + labs(title="Temperature values by date", x="Date (YYYYMMDD)", y="Temperature (Degrees C)") + theme(plot.title = element_text(hjust = 0.5)) 
 ```
+
+![](DataExploration/Plots/Temperature%20Values%20by%20date.png)
+
 This graph just shows temperature changes over time. We don't expect them to vary much, but its good to take a look regardless to see if there is variation in temperature at all. There does seem to be variation which will be important for our analyses. Also, I used the clean data because we needed to confirm that there was variation in the data we will actually use, not just in the original data. If, for example, all the temperatures were the same, we likely wouldn't be able to make any conclusions about the temperature ranges of these fishes. 
 ```{r Checking temperature effects visually}
 ggplot(fish.data.clean, aes(x=fishingTemperature_C, fill=inv.status)) + geom_histogram(bins=15) + facet_wrap(~commonName) + labs(title="Observed temperature by species", x="Temperature (Degrees C)", y="Count of individuals observed") + theme(plot.title = element_text(hjust = 0.5)) + scale_fill_discrete(name = "Status")
 #plotting the count of observations of each species depending on the temperature.
 ```
+![](DataExploration/Plots/Observed%20Temperature%20by%20species.png)
+
 Just based on the visual that this graph provides it looks like there's a variety of temperature tolerances among our focal species. It seems like the round goby does not exist at much higher temperatures than the other species. We will still have to run our analysis to confirm this, but there appears to be little difference in temperature tolerance of the round goby in comparison to the other native species. Interestingly, some of these species (like the yellow perch, trout perch, and lake trout) have an even wider temperature range than the round goby. Others, like the slimy sculpin, have a narrower range and seem to be mostly found at one location. It should be noted, as well, that these data are counts so it simply be that the slimy sculpin is just more commonly observed which is why it would have such a narrow peak.
-#Plotting abundance
-```{r}
-#M: we need to graph each species abundance (y axis) against the abundance of the round goby (x axis) so we should have 7 graphs here
+
+#Plotting proportion of the catch by Species 
+```{r plotting proportion of catch by species }
+# Proportion of the total catch from the first occurance of the Round Goby in 1997 
+fish.data.clean %>% 
+  group_by(commonName, year) %>% 
+  # filtering out year based on first time a goby was sighted --> in 1997
+  filter(year %in% seq(1997, 2022)) %>% 
+  tally(n) %>%  # tallying up occurances of each species
+  ggplot(aes(x=year, y=n, fill=commonName)) + geom_bar(position="fill", stat="identity") + labs(title="Proportion of Catch By Species", x="Year of Study", y="Proportion of catch") + theme(axis.text.x = element_text(angle=90, hjust=1)) 
 ```
+![](DataExploration/Plots/Proportion%20of%20Catch%20By%20Species.png)
+
+
+By plotting the proportion of the yearly catch by species, we can see some pretty intesting details. At the very beginning of the introduction of the Round Goby, 
+we can see that the majority of the catch was either the Threespine Stickleback or the Slimy Sculpin; both benthic species that occupy a similar niche to the Round goby. As the study progressed, the Round Goby became a greater and greater proporition of the catch, while catches of native fish including the Threespine Stickleback and the Slimy Sculpin were observed less and less. 
 
 ## Analysis 
 
@@ -160,7 +172,7 @@ There are several analyses we plan to complete.
 
 
 ## Sources and Citations:
-[^1]: https://link.springer.com/content/pdf/10.1023/B:BINV.0000022136.43502.db.pdf
+[^1]: Corkum, Lynda D., et al. “The Round Goby, Neogobius Melanostomus, a Fish Invader on Both Sides of the Atlantic Ocean.” Biological Invasions, vol. 6, no. 2, 2004, pp. 173–81.  https://doi.org/10.1023/B:BINV.0000022136.43502.db.
 [^2]: Weidel, B.C., Holden, J.P., Goretzke, J., Connerton, M., and Gutowsky, L., 2022, Lake Ontario April Prey Fish Bottom Trawl Survey, 1978-2022: U.S. Geological Survey data release, https://doi.org/10.5066/P97DZ1AS.
 [^3]: Reid, H. B., & Ricciardi, A., 2022, Ecological responses to elevated water temperatures across invasive populations of the round goby ( Neogobius melanostomus ) in the Great Lakes basin. Canadian Journal of Fisheries and Aquatic Sciences, 79(2), 277–288. https://doi.org/10.1139/cjfas-2021-0141
 [^4]: Yves, P, 2018, Aquatic invasive species in the freshwater section of the St. Lawrence River. Gouvernement du Québec,.
