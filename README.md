@@ -117,12 +117,19 @@ fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested 
 ```
 
 ###Cleaning: Change the format of date column to YYYY-MM-DD
+```{r}
+fish.data.clean2 <- fish.data.clean
+```
+
 ```{r Cleaning data 3}
 library(dplyr)
-fish.data.clean %>%
+fish.data.clean <- fish.data.clean2 %>%
   group_by(opDate) %>%
-  mutate(opDate = paste0(substr(opDate,1,4), "-", substr(opDate,5,6), "-", substr(opDate,7,8))) %>%
-  ungroup()
+  mutate(opDate = paste0(substr(opDate,1,4), "-", substr(opDate,5,6), "-", substr(opDate,7,8))) %>% 
+  as.data.frame(mutate(opDate = as.character(opDate)))
+
+```
+
 ```
 
 #Plotting temperature
