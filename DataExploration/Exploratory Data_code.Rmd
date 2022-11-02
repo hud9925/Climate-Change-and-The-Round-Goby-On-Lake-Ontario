@@ -80,6 +80,20 @@ fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested 
 head(fish.data.clean)
 ```
 
+###Cleaning: Change the format of date column to YYYY-MM-DD
+```{r}
+fish.data.clean2 <- fish.data.clean
+```
+
+```{r }
+library(dplyr)
+fish.data.clean <- fish.data.clean2 %>%
+  group_by(opDate) %>%
+  mutate(opDate = paste0(substr(opDate,1,4), "-", substr(opDate,5,6), "-", substr(opDate,7,8))) %>% 
+  as.data.frame(mutate(opDate = as.character(opDate)))
+
+```
+
 
 ```{r}
 unique(fish.data$year) #we have data from 1997 to 2022
