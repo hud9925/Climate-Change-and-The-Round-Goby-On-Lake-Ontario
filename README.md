@@ -119,7 +119,6 @@ fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested 
 ```{r}
 fish.data.clean2 <- fish.data.clean
 ```
-
 ```{r Cleaning data 3}
 library(dplyr)
 fish.data.clean <- fish.data.clean2 %>%
@@ -128,7 +127,6 @@ fish.data.clean <- fish.data.clean2 %>%
   as.data.frame(mutate(opDate = as.character(opDate)))
 
 ```
-
 #Plotting temperature
 ```{r Temperature Plot}
 unique(fish.data$year) #we have data from 1997 to 2022
@@ -159,6 +157,8 @@ fish.data.clean %>%
   ggplot(aes(x=year, y=n, fill=commonName)) + geom_bar(position="fill", stat="identity") + labs(title="Proportion of Catch By Species", x="Year of Study", y="Proportion of catch") + theme(axis.text.x = element_text(angle=90, hjust=1)) 
 ```
 ![](DataExploration/Plots/Proportion%20of%20Catch%20By%20Species.png)
+
+
 By plotting the proportion of the yearly catch by species, we can see some pretty intesting details. At the very beginning of the introduction of the Round Goby, 
 we can see that the majority of the catch was either the Threespine Stickleback or the Slimy Sculpin; both benthic species that occupy a similar niche to the Round goby. As the study progressed, the Round Goby became a greater and greater proporition of the catch, while catches of native fish including the Threespine Stickleback and the Slimy Sculpin were observed less and less. 
 
