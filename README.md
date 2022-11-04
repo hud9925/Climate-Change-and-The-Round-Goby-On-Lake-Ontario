@@ -33,7 +33,7 @@ Link:  https://www.sciencebase.gov/catalog/item/62f4fd46d34eacf53973a841
 
 To get our data ready for general analysis(for studying both abundances and morphology), we first removed columns from the dataset that were not applicable to our analysis, such as towing time, speed of the research vessel, etc. Furthermore, we mutated the saved dataset to label the species caught as either native or non-native("exotic"). This makes it easier for us to group the species for analysis. We then tallied up the total number of individuals by species; keeping the species with more than 200 observations. Species with less than 200 indivdiduals studied probably indicates that said species did not occupy a niche within the benthic layer of water, and thus would have less interaction with the round goby. As the dataset covers a large amount of data over a extremely long period of time(40+ years of data), species with less than 200 observations would potentially skew the analysis, as there are not enough individuals to get a more accurate representation of that species. After filtering out our desired species that met this requirement ("Slimy Sculpin," "deepwater sculpin," "yellow perch," "trout-perch," "johnny darter," "lake trout," "round goby," "threespine stickleback"), we are now able to perform our desired analysis on the data. 
 
-To see a detailed breakdown of our code and plots that we created, go to the folder "data exploration," which contains our code. [a link] (GroupC/DataExploration/)
+To see a detailed breakdown of our code and plots that we created, go to the folder "data exploration," which contains our code. ![a link] (GroupC/DataExploration/)
 
 ## Analysis 
 
