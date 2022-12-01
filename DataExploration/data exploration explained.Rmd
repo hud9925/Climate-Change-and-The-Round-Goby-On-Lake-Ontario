@@ -11,6 +11,7 @@ library(ggplot2)
 library(dplyr)
 library(ggfortify)
 library(tidyverse)
+library(ggalt)
 ```
 ```{r Cleaning Data}
 fish.data.raw <- read.csv("TrawlCatch_SpringPreyfishBottomTrawl.csv")
@@ -118,6 +119,7 @@ Just based on the visual that this graph provides it looks like there's a variet
 #Plotting proportion of the catch by Species 
 ```{r plotting proportion of catch by species }
 # Proportion of the total catch from the first occurance of the Round Goby in 1997 
+fish.data.clean
 fish.data.clean %>% 
   group_by(commonName, year) %>% 
   # filtering out year based on first time a goby was sighted --> in 1997
@@ -127,6 +129,74 @@ fish.data.clean %>%
 ```
 ![](DataExploration/Plots/Proportion%20of%20Catch%20By%20Species.png)
 
-
 By plotting the proportion of the yearly catch by species, we can see some pretty intesting details. At the very beginning of the introduction of the Round Goby, 
 we can see that the majority of the catch was either the Threespine Stickleback or the Slimy Sculpin; both benthic species that occupy a similar niche to the Round goby. As the study progressed, the Round Goby became a greater and greater proporition of the catch, while catches of native fish including the Threespine Stickleback and the Slimy Sculpin were observed less and less. 
+
+
+
+```{r}
+library(ape)
+library(MuMIn)
+library(nlme)
+library(terra)
+library(sf)
+library(maps)
+```
+
+```{r}
+fish.data.cleaned <- fish.data.clean2 %>% 
+  select(-c("serial", "towTime_min",  "speed_mpsec", "wingSpreadModeled_m" , "extraBottomContactTime_sec",
+            "areaSampledDoors_m2", "lifeStageName",  "commonName"))
+```
+
+# cluster analysis 
+```{r}
+library("sp")
+```
+```{r}
+# Native and Exotic Speices identification, and where they were found in lake Ontario
+ggplot(data=fish.data.clean) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.cleaned, aes(x=longitude, y=latitude, colour=inv.status)) + labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
+```
+
+```{r}
+# k-means clustering 
+kclust <- fish.data.clean %>% 
+  dplyr::select(longitude, latitude) %>% 
+  kmeans(centers = 25, iter.max = 100, nstart=10)
+
+# adding cluster nukmber to original data 
+fish.data.clean2 <- broom::augment(kclust, fish.data.clean)
+head(fish.data.clean2)  # updated dataframe with site names under ".cluster" col
+
+# map representation; clustering around the black encirclements, as well as 
+# identified by number; shapes identifies whether observation is a native species
+# or the Round goby
+lakes <- map_data("lakes")
+lake_ontario<- subset(lakes, subregion %in% c("Ontario"))
+ggplot(data=fish.data.clean2) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster, shape = inv.status)) + geom_encircle(aes(x=longitude, y=latitude, group=.cluster)) + 
+  labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
+```
+```{r}
+# Representation without geom_encircle
+ggplot(data=fish.data.clean2) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster, shape = inv.status))+
+  labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
