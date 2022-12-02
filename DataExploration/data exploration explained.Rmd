@@ -7,11 +7,15 @@ output: html_notebook
 
 ###Setup
 ```{r Setup}
+
 library(ggplot2)
 library(dplyr)
 library(ggfortify)
 library(tidyverse)
 library(ggalt)
+library(maps)
+library(lme4)
+library(lmerTest)
 ```
 ```{r Cleaning Data}
 fish.data.raw <- read.csv("TrawlCatch_SpringPreyfishBottomTrawl.csv")
@@ -95,13 +99,11 @@ fish.data.clean <- fish.data.clean2 %>%
   group_by(opDate) %>%
   mutate(opDate = paste0(substr(opDate,1,4), "-", substr(opDate,5,6), "-", substr(opDate,7,8))) %>% 
   as.data.frame(mutate(opDate = as.character(opDate)))
-
 ```
 #Plotting temperature
 ```{r Temperature Plot}
 unique(fish.data$year) #we have data from 1997 to 2022
 #the dates should be converted into a more readable format. I just don't know how to do that so I need to ask for help.
-
 ggplot(fish.data, aes(x=opDate, y=fishingTemperature_C)) + geom_point(alpha=0.1) + geom_smooth() + labs(title="Temperature values by date", x="Date (YYYYMMDD)", y="Temperature (Degrees C)") + theme(plot.title = element_text(hjust = 0.5)) 
 ```
 
@@ -165,11 +167,9 @@ ggplot(data=fish.data.clean) +
 kclust <- fish.data.clean %>% 
   dplyr::select(longitude, latitude) %>% 
   kmeans(centers = 25, iter.max = 100, nstart=10)
-
 # adding cluster nukmber to original data 
 fish.data.clean2 <- broom::augment(kclust, fish.data.clean)
 head(fish.data.clean2)  # updated dataframe with site names under ".cluster" col
-
 # map representation; clustering around the black encirclements, as well as 
 # identified by number; shapes identifies whether observation is a native species
 # or the Round goby
@@ -187,16 +187,242 @@ ggplot(data=fish.data.clean2) +
   geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster, shape = inv.status))+
   labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
 ```
+#Mixed models
+y variables 
+abundance, and mass (as an indicator of health)
+x variables
+temperature
+w/ random effect of sites 
+-- here we are checking if temperature has an effect on each of these fish species
+```{r}
+#creating data sets that just include the fish that I want so that I can do each species one by one
+fish.data.clean2.roundgoby <- fish.data.clean2 %>% 
+  filter(commonName=="Round goby")
+fish.data.clean2.yellowperch <- fish.data.clean2 %>% 
+  filter(commonName=="Yellow perch")
+fish.data.clean2.deepwatersculpin <- fish.data.clean2 %>% 
+  filter(commonName=="Deepwater sculpin")
+fish.data.clean2.troutperch <- fish.data.clean2 %>% 
+  filter(commonName=="Trout-perch")
+fish.data.clean2.johnnydarter <- fish.data.clean2 %>% 
+  filter(commonName=="Johnny darter")
+fish.data.clean2.laketrout <- fish.data.clean2 %>% 
+  filter(commonName=="Lake trout")
+fish.data.clean2.slimysculpin <- fish.data.clean2 %>% 
+  filter(commonName=="Slimy sculpin")
+```
+```{r}
+#round goby
+roundgoby.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
+roundgoby.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
+ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Round goby abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Round goby mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(roundgoby.mixed.model.abundance)
+summary(roundgoby.mixed.model.mass)
+```
+```{r}
+#yellow perch
+yellowperch.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
+yellowperch.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
+ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Yellow perch abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Yellow perch mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(yellowperch.mixed.model.abundance)
+summary(yellowperch.mixed.model.mass)
+```
+```{r}
+#deepwater sculpin
+deepwatersculpin.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
+deepwatersculpin.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
+ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Deepwater sculpin abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Deepwater sculpin mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(deepwatersculpin.mixed.model.abundance)
+summary(deepwatersculpin.mixed.model.mass)
+```
+```{r}
+#trout perch
+troutperch.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
+troutperch.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
+ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Trout perch abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Trout perch mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(troutperch.mixed.model.abundance)
+summary(troutperch.mixed.model.mass)
+```
+```{r}
+#johnny darter
+johnnydarter.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Johnny darter abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Johnny darter mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(johnnydarter.mixed.model.abundance)
+summary(johnnydarter.mixed.model.mass)
+```
+```{r}
+#lake trout
+laketrout.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+laketrout.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Lake trout abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Lake trout mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(laketrout.mixed.model.abundance)
+summary(laketrout.mixed.model.mass)
+```
+```{r}
+#slimy sculpin
+slimysculpin.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+summary(slimysculpin.mixed.model.abundance)
+summary(slimysculpin.mixed.model.mass)
+ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Slimy sculpin abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Slimy sculpin mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+#Linear models (effects of round goby on species)
+```{r}
+
+fish.data.lm <- fish.data.clean2 
+fish.data.grouped <- fish.data.lm %>% 
+  group_by(.cluster) %>% 
+  group_by(year) %>%
+  mutate(sum.n=sum(n))
+fish.data.wider <- fish.data.grouped %>% 
+  pivot_wider(names_from = commonName, values_from = sum.n)
+
+names(fish.data.wider)[names(fish.data.wider)== "Slimy sculpin"] <- "slimy.sculpin"
+names(fish.data.wider)[names(fish.data.wider)== "Lake trout"] <- "lake.trout"
+names(fish.data.wider)[names(fish.data.wider)== "Johnny darter"] <- "johnny.darter"
+names(fish.data.wider)[names(fish.data.wider)== "Trout-perch"] <- "trout.perch"
+names(fish.data.wider)[names(fish.data.wider)== "Yellow perch"] <- "yellow.perch"
+names(fish.data.wider)[names(fish.data.wider)== "Threespine stickleback"] <- "threespine.stickleback"
+names(fish.data.wider)[names(fish.data.wider)== "Round goby"] <- "round.goby"
+names(fish.data.wider)[names(fish.data.wider)== "Deepwater sculpin"] <- "deepwater.sculpin"
+
+#aggregate.data1 <- aggregate(cbind(slimy.sculpin,lake.trout,johnny.darter,trout.perch,yellow.perch, threespine.stickleback,round.goby,deepwater.sculpin)~year+.cluster,fish.data.wider, FUN=mean)
+
+#aggregate.data1 <- aggregate(slimy.sculpin~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data2 <- aggregate(lake.trout~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data3 <- aggregate(johnny.darter~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data4 <- aggregate(trout.perch~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data5 <- aggregate(yellow.perch~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data6 <- aggregate(threespine.stickleback~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data7 <- aggregate(round.goby~year+.cluster,fish.data.wider, FUN=mean)
+#aggregate.data8 <- aggregate(deepwater.sculpin~year+.cluster,fish.data.wider, FUN=mean)
+
+#agregate.data <- merge(aggregate.data1,aggregate.data2,by=c("year",".cluster"))
+#agregate.data <- merge(aggregate.data,aggregate.data3,by=c("year",".cluster"))
+#agregate.data <- merge(aggregate.data,aggregate.data4,by=c("year",".cluster"))
+#agregate.data <- merge(aggregate.data,aggregate.data5,by=c("year",".cluster"))
+#agregate.data <- merge(aggregate.data,aggregate.data6,by=c("year",".cluster"))
+#agregate.data <- merge(aggregate.data,aggregate.data7,by=c("year",".cluster"))
+#agregate.data <- merge(aggregate.data,aggregate.data8,by=c("year",".cluster"))
+
+#fish.data.aggregate <- fish.data.wider %>%
+  #group_by(.cluster, year) %>%
+  #summarise(across(c(slimy.sculpin,lake.trout,johnny.darter,trout.perch,yellow.perch,threespine.stickleback,round.goby,deepwater.sculpin), print)
+
+
+```
 
 
 
-
-
-
-
-
-
-
-
-
-
+#to do list
+make a table of each model and its significance or not significance
+- figure out what sig of intercept means
+graph each fish vs round goby
+model each fish vs round goby + get results
