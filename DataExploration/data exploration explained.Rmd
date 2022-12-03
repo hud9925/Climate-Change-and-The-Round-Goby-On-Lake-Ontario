@@ -418,6 +418,18 @@ names(fish.data.wider)[names(fish.data.wider)== "Deepwater sculpin"] <- "deepwat
 
 
 ```
+```{r}
+fish.data.lm <- fish.data.clean2 
+fish.data.grouped <- fish.data.lm %>% 
+  select(-c("vesselName", "serial", "latitude", "longitude", "fishingDepth_m", "towTime_min", "speed_mpsec", "wingSpreadModeled_m", "extraBottomContactTime_sec", "areaSampledDoors_m2", "lifeStageName", "opDate", "opId")) %>%
+  group_by(year, .cluster, commonName) %>%
+  arrange(year, .cluster) 
+
+# use data.table to sum up weight and abundances for each species in every site
+# every year 
+fish.data.grouped2 <- data.table(fish.data.grouped)
+fish.data.grouped2  <- fish.data.grouped2[, list(weight_g = sum(weight_g), n=sum(n)), by = c("commonName", "year", ".cluster")]
+```
 
 
 
