@@ -186,6 +186,16 @@ ggplot(data=fish.data.clean2) +
   geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster, shape = inv.status))+
   labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
 ```
+```{r}
+# Representation without geom_encircle
+ggplot(data=fish.data.clean2) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster))+
+  labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude") + 
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
 #Mixed models
 y variables 
 abundance, and mass (as an indicator of health)
@@ -209,6 +219,8 @@ fish.data.clean2.laketrout <- fish.data.clean2 %>%
   filter(commonName=="Lake trout")
 fish.data.clean2.slimysculpin <- fish.data.clean2 %>% 
   filter(commonName=="Slimy sculpin")
+fish.data.clean2.threespinestickleback <- fish.data.clean2 %>% 
+  filter(commonName=="Threespine stickleback")
 ```
 ```{r}
 #round goby
@@ -371,6 +383,30 @@ ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=weight_g)) +
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+```{r}
+#Threespine stickleback
+threespinestickleback.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.threespinestickleback)
+threespinestickleback.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.threespinestickleback)
+ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=n)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Threespine stickleback abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=weight_g)) +
+  geom_point() +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Threespine stickleback mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+summary(threespinestickleback.mixed.model.abundance)
+summary(threespinestickleback.mixed.model.mass)
+```
+
 
 #Linear models (effects of round goby on species)
 ```{r}
@@ -515,9 +551,11 @@ ggplot(fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 & fish.data.wid
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-
-
 #to do list
 fix mixed model graphs to show the calculated line not a smooth line
 make a table of each model and its significance or not significance
+check assumptions on the models we ran
 make presentation
+finish presentation notes
+Check that we have met all the requirements for the presentation
+annotate code with explanations
