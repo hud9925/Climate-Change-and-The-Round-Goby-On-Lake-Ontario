@@ -572,3 +572,9 @@ ggplot(fish.data.wider,
   theme(axis.text.x = element_text(angle=90)) +
   scale_x_discrete(breaks=c(seq(1970,2022,5))) 
 ```
+
+#to do list
+check assumptions on the models we ran
+Add title slide and references
+make font size larger on all graph axis - they're kinda small right now
+annotate code with explanations
