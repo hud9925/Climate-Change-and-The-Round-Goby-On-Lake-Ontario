@@ -7,7 +7,6 @@ output: html_notebook
 
 ###Setup
 ```{r Setup}
-
 library(ggplot2)
 library(dplyr)
 library(ggfortify)
@@ -375,7 +374,6 @@ ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=weight_g)) +
 
 #Linear models (effects of round goby on species)
 ```{r}
-
 fish.data.lm <- fish.data.clean2 
 fish.data.grouped <- fish.data.lm %>% 
   group_by(.cluster) %>% 
@@ -383,7 +381,7 @@ fish.data.grouped <- fish.data.lm %>%
   mutate(sum.n=sum(n))
 fish.data.wider <- fish.data.grouped %>% 
   pivot_wider(names_from = commonName, values_from = sum.n)
-
+fish.data.wider[is.na(fish.data.wider)] <- 0
 names(fish.data.wider)[names(fish.data.wider)== "Slimy sculpin"] <- "slimy.sculpin"
 names(fish.data.wider)[names(fish.data.wider)== "Lake trout"] <- "lake.trout"
 names(fish.data.wider)[names(fish.data.wider)== "Johnny darter"] <- "johnny.darter"
@@ -392,49 +390,134 @@ names(fish.data.wider)[names(fish.data.wider)== "Yellow perch"] <- "yellow.perch
 names(fish.data.wider)[names(fish.data.wider)== "Threespine stickleback"] <- "threespine.stickleback"
 names(fish.data.wider)[names(fish.data.wider)== "Round goby"] <- "round.goby"
 names(fish.data.wider)[names(fish.data.wider)== "Deepwater sculpin"] <- "deepwater.sculpin"
-
-#aggregate.data1 <- aggregate(cbind(slimy.sculpin,lake.trout,johnny.darter,trout.perch,yellow.perch, threespine.stickleback,round.goby,deepwater.sculpin)~year+.cluster,fish.data.wider, FUN=mean)
-
-#aggregate.data1 <- aggregate(slimy.sculpin~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data2 <- aggregate(lake.trout~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data3 <- aggregate(johnny.darter~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data4 <- aggregate(trout.perch~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data5 <- aggregate(yellow.perch~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data6 <- aggregate(threespine.stickleback~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data7 <- aggregate(round.goby~year+.cluster,fish.data.wider, FUN=mean)
-#aggregate.data8 <- aggregate(deepwater.sculpin~year+.cluster,fish.data.wider, FUN=mean)
-
-#agregate.data <- merge(aggregate.data1,aggregate.data2,by=c("year",".cluster"))
-#agregate.data <- merge(aggregate.data,aggregate.data3,by=c("year",".cluster"))
-#agregate.data <- merge(aggregate.data,aggregate.data4,by=c("year",".cluster"))
-#agregate.data <- merge(aggregate.data,aggregate.data5,by=c("year",".cluster"))
-#agregate.data <- merge(aggregate.data,aggregate.data6,by=c("year",".cluster"))
-#agregate.data <- merge(aggregate.data,aggregate.data7,by=c("year",".cluster"))
-#agregate.data <- merge(aggregate.data,aggregate.data8,by=c("year",".cluster"))
-
-#fish.data.aggregate <- fish.data.wider %>%
-  #group_by(.cluster, year) %>%
-  #summarise(across(c(slimy.sculpin,lake.trout,johnny.darter,trout.perch,yellow.perch,threespine.stickleback,round.goby,deepwater.sculpin), print)
-
-
 ```
 ```{r}
-fish.data.lm <- fish.data.clean2 
-fish.data.grouped <- fish.data.lm %>% 
-  select(-c("vesselName", "serial", "latitude", "longitude", "fishingDepth_m", "towTime_min", "speed_mpsec", "wingSpreadModeled_m", "extraBottomContactTime_sec", "areaSampledDoors_m2", "lifeStageName", "opDate", "opId")) %>%
+fish.data.grouped <- as.data.frame(fish.data.clean2) %>% 
+  select(-c("fishingTemperature_C","weight_g","inv.status","vesselName", "serial", "latitude", "longitude", "fishingDepth_m", "towTime_min", "speed_mpsec", "wingSpreadModeled_m", "extraBottomContactTime_sec", "areaSampledDoors_m2", "lifeStageName", "opDate", "opId")) %>%
   group_by(year, .cluster, commonName) %>%
-  arrange(year, .cluster) 
-
+  mutate(sum.n=sum(n)) %>% 
+  arrange(year, .cluster)
+fish.data.grouped <- distinct(fish.data.grouped, year,.cluster, .keep_all= TRUE)
 # use data.table to sum up weight and abundances for each species in every site
 # every year 
-fish.data.grouped2 <- data.table(fish.data.grouped)
-fish.data.grouped2  <- fish.data.grouped2[, list(weight_g = sum(weight_g), n=sum(n)), by = c("commonName", "year", ".cluster")]
+fish.data.wider2 <- fish.data.grouped %>% 
+  pivot_wider(names_from = commonName, values_from = sum.n)
+fish.data.wider2 <- as.data.frame(fish.data.wider2)
+fish.data.wider2[is.na(fish.data.wider2)] <- 0
+names(fish.data.wider2)[names(fish.data.wider2)== "Slimy sculpin"] <- "slimy.sculpin"
+names(fish.data.wider2)[names(fish.data.wider2)== "Lake trout"] <- "lake.trout"
+names(fish.data.wider2)[names(fish.data.wider2)== "Johnny darter"] <- "johnny.darter"
+names(fish.data.wider2)[names(fish.data.wider2)== "Trout-perch"] <- "trout.perch"
+names(fish.data.wider2)[names(fish.data.wider2)== "Yellow perch"] <- "yellow.perch"
+names(fish.data.wider2)[names(fish.data.wider2)== "Threespine stickleback"] <- "threespine.stickleback"
+names(fish.data.wider2)[names(fish.data.wider2)== "Round goby"] <- "round.goby"
+names(fish.data.wider2)[names(fish.data.wider2)== "Deepwater sculpin"] <- "deepwater.sculpin"
+fish.data.wider <- fish.data.wider2 %>% 
+  group_by(year, .cluster) %>% 
+  summarise(across(c(slimy.sculpin,lake.trout,johnny.darter,trout.perch,yellow.perch,threespine.stickleback,round.goby,deepwater.sculpin),sum))
+```
+
+```{r}
+slimysculpin.result <- lm(slimy.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 & fish.data.wider$round.goby>0),])
+summary(slimysculpin.result)
+ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=slimy.sculpin)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs slimy sculpin") +
+  ylab("Slimy Sculpin Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+laketrout.result <- lm(lake.trout~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 & fish.data.wider$round.goby>0),])
+summary(laketrout.result)
+ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=lake.trout)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs lake trout") +
+  ylab("Lake Trout Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+johnnydarter.result <- lm(johnny.darter~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 & fish.data.wider$round.goby>0),])
+summary(troutperch.result)
+ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=johnny.darter)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs johnny darter") +
+  ylab("Johnny Darter Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+troutperch.result <- lm(trout.perch~round.goby, data=fish.data.wider[which(fish.data.wider$trout.perch>0 & fish.data.wider$round.goby>0),])
+summary(troutperch.result)
+ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=trout.perch)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs trout perch") +
+  ylab("Trout Perch Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+yellowperch.result <- lm(yellow.perch~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 & fish.data.wider$round.goby>0),])
+summary(yellowperch.result)
+ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=yellow.perch)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs yellow perch") +
+  ylab("Yellow Perch Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+threespinestickleback.result <- lm(threespine.stickleback~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.data.wider$round.goby>0),])
+summary(threespinestickleback.result)
+ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=threespine.stickleback)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs threespine stickleback") +
+  ylab("Threespine Stickleback Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+deepwatersculpin.result <- lm(deepwater.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.data.wider$round.goby>0),])
+summary(deepwatersculpin.result)
+ggplot(fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 & fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=deepwater.sculpin)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth()+
+  theme_classic() +
+  ggtitle("Abundance of round goby vs deepwater sculpin") +
+  ylab("Deepwater Sculpin Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
 
 #to do list
+fix mixed model graphs to show the calculated line not a smooth line
 make a table of each model and its significance or not significance
-- figure out what sig of intercept means
-graph each fish vs round goby
-model each fish vs round goby + get results
+make presentation
