@@ -464,9 +464,9 @@ fish.data.wider <- fish.data.wider2 %>%
 ```
 
 ```{r}
-slimysculpin.result <- lm(slimy.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 & fish.data.wider$round.goby>0),])
+slimysculpin.result <- lm(slimy.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),])
 summary(slimysculpin.result)
-ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=slimy.sculpin)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -478,9 +478,9 @@ ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 & fish.data.wider$r
 ```
 
 ```{r}
-laketrout.result <- lm(lake.trout~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 & fish.data.wider$round.goby>0),])
+laketrout.result <- lm(lake.trout~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),])
 summary(laketrout.result)
-ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=lake.trout)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -492,9 +492,9 @@ ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 & fish.data.wider$roun
 ```
 
 ```{r}
-johnnydarter.result <- lm(johnny.darter~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 & fish.data.wider$round.goby>0),])
+johnnydarter.result <- lm(johnny.darter~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
 summary(troutperch.result)
-ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=johnny.darter)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -506,9 +506,9 @@ ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 & fish.data.wider$r
 ```
 
 ```{r}
-troutperch.result <- lm(trout.perch~round.goby, data=fish.data.wider[which(fish.data.wider$trout.perch>0 & fish.data.wider$round.goby>0),])
+troutperch.result <- lm(trout.perch~round.goby, data=fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),])
 summary(troutperch.result)
-ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=trout.perch)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -520,9 +520,9 @@ ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 & fish.data.wider$rou
 ```
 
 ```{r}
-yellowperch.result <- lm(yellow.perch~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 & fish.data.wider$round.goby>0),])
+yellowperch.result <- lm(yellow.perch~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),])
 summary(yellowperch.result)
-ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=yellow.perch)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -534,9 +534,9 @@ ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 & fish.data.wider$ro
 ```
 
 ```{r}
-threespinestickleback.result <- lm(threespine.stickleback~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.data.wider$round.goby>0),])
+threespinestickleback.result <- lm(threespine.stickleback~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
 summary(threespinestickleback.result)
-ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=threespine.stickleback)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -548,9 +548,9 @@ ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.dat
 ```
 
 ```{r}
-deepwatersculpin.result <- lm(deepwater.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 & fish.data.wider$round.goby>0),])
+deepwatersculpin.result <- lm(deepwater.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
 summary(deepwatersculpin.result)
-ggplot(fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 & fish.data.wider$round.goby>0),],
+ggplot(fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=deepwater.sculpin)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
