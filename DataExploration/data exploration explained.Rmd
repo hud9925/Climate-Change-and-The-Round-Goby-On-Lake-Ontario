@@ -206,26 +206,34 @@ w/ random effect of sites
 ```{r}
 #creating data sets that just include the fish that I want so that I can do each species one by one
 fish.data.clean2.roundgoby <- fish.data.clean2 %>% 
-  filter(commonName=="Round goby")
+  filter(commonName=="Round goby") %>% 
+  mutate("average_weight" = weight_g/n)
 fish.data.clean2.yellowperch <- fish.data.clean2 %>% 
-  filter(commonName=="Yellow perch")
+  filter(commonName=="Yellow perch") %>% 
+   mutate("average_weight" = weight_g/n)
 fish.data.clean2.deepwatersculpin <- fish.data.clean2 %>% 
-  filter(commonName=="Deepwater sculpin")
+  filter(commonName=="Deepwater sculpin") %>% 
+   mutate("average_weight" = weight_g/n)
 fish.data.clean2.troutperch <- fish.data.clean2 %>% 
-  filter(commonName=="Trout-perch")
+  filter(commonName=="Trout-perch") %>% 
+   mutate("average_weight" = weight_g/n)
 fish.data.clean2.johnnydarter <- fish.data.clean2 %>% 
-  filter(commonName=="Johnny darter")
+  filter(commonName=="Johnny darter") %>% 
+   mutate("average_weight" = weight_g/n)
 fish.data.clean2.laketrout <- fish.data.clean2 %>% 
-  filter(commonName=="Lake trout")
+  filter(commonName=="Lake trout") %>% 
+   mutate("average_weight" = weight_g/n)
 fish.data.clean2.slimysculpin <- fish.data.clean2 %>% 
-  filter(commonName=="Slimy sculpin")
+  filter(commonName=="Slimy sculpin") %>% 
+   mutate("average_weight" = weight_g/n)
 fish.data.clean2.threespinestickleback <- fish.data.clean2 %>% 
-  filter(commonName=="Threespine stickleback")
+  filter(commonName=="Threespine stickleback") %>% 
+   mutate("average_weight" = weight_g/n)
 ```
 ```{r}
 #round goby
 roundgoby.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
-roundgoby.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
+roundgoby.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
 ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -234,12 +242,12 @@ ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
-  ggtitle("Round goby mass by temperature") +
-  ylab("Mass (grams)")+
+  ggtitle("Average Round goby Weight by temperature") +
+  ylab("Average Weight (grams)")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
 summary(roundgoby.mixed.model.abundance)
@@ -248,7 +256,7 @@ summary(roundgoby.mixed.model.mass)
 ```{r}
 #yellow perch
 yellowperch.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
-yellowperch.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
+yellowperch.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
 ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -257,7 +265,7 @@ ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
@@ -271,7 +279,7 @@ summary(yellowperch.mixed.model.mass)
 ```{r}
 #deepwater sculpin
 deepwatersculpin.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
-deepwatersculpin.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
+deepwatersculpin.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
 ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -280,12 +288,12 @@ ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
-  ggtitle("Deepwater sculpin mass by temperature") +
-  ylab("Mass (grams)")+
+  ggtitle("Average Deepwater sculpin Weight by temperature") +
+  ylab("Weight (grams)")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
 summary(deepwatersculpin.mixed.model.abundance)
@@ -294,7 +302,7 @@ summary(deepwatersculpin.mixed.model.mass)
 ```{r}
 #trout perch
 troutperch.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
-troutperch.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
+troutperch.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
 ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -303,7 +311,7 @@ ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
@@ -317,7 +325,7 @@ summary(troutperch.mixed.model.mass)
 ```{r}
 #johnny darter
 johnnydarter.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
-johnnydarter.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
 ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -326,12 +334,12 @@ ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
-  ggtitle("Johnny darter mass by temperature") +
-  ylab("Mass (grams)")+
+  ggtitle("Average Johnny darter Weight by temperature") +
+  ylab("Weight (grams)")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
 summary(johnnydarter.mixed.model.abundance)
@@ -340,7 +348,7 @@ summary(johnnydarter.mixed.model.mass)
 ```{r}
 #lake trout
 laketrout.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
-laketrout.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+laketrout.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
 ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -349,12 +357,12 @@ ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
-  ggtitle("Lake trout mass by temperature") +
-  ylab("Mass (grams)")+
+  ggtitle("Average Lake trout Weight by temperature") +
+  ylab("Weight (grams)")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
 summary(laketrout.mixed.model.abundance)
@@ -363,7 +371,7 @@ summary(laketrout.mixed.model.mass)
 ```{r}
 #slimy sculpin
 slimysculpin.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
-slimysculpin.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
 summary(slimysculpin.mixed.model.abundance)
 summary(slimysculpin.mixed.model.mass)
 ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=n)) +
@@ -374,19 +382,19 @@ ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=n)) +
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
-  ggtitle("Slimy sculpin mass by temperature") +
-  ylab("Mass (grams)")+
+  ggtitle("Average Slimy sculpin Weight by temperature") +
+  ylab("Weight (grams)")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 ```{r}
 #Threespine stickleback
 threespinestickleback.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.threespinestickleback)
-threespinestickleback.mixed.model.mass <-lmer(weight_g ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.threespinestickleback)
+threespinestickleback.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.threespinestickleback)
 ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=n)) +
   geom_point() +
   geom_smooth(method="lm")+
@@ -395,7 +403,7 @@ ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=n))
   ylab("Number observed")+
   xlab("Temperature (degrees C)") +
   theme(plot.title = element_text(hjust = 0.5))
-ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=weight_g)) +
+ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=average_weight)) +
   geom_point() +
   geom_smooth(method="lm")+
   theme_classic() +
