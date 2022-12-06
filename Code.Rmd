@@ -88,6 +88,69 @@ fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested 
   filter(commonName=="Yellow perch" | commonName=="Threespine stickleback" | commonName=="Deepwater sculpin" | commonName=="Trout-perch" | commonName=="Johnny darter" | commonName=="Lake trout" | commonName=="Slimy sculpin" | commonName=="Round goby")
 ```
 
+###Choosing focal species
+```{r Choosing Native Species}
+fish.data %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n)) #this helped us see how many observations we had per species 
+fish.list <- as.data.frame(unique(fish.data$commonName)) #this just made a data frame of the list so we could check if each one was exotic or native
+fish.data.exonat <- fish.data %>% #Here we made a new column that marks each fish species as exotic or native. This was based on a few papers listed in our methods. We did not bother doing this for any fishes where there were less than 200 observations because they would not be used for this analysis anyway. We also did not do this for non-fish species as they are not the focus of this analysis. 
+  mutate(inv.status = case_when(
+    endsWith(commonName, "Alewife") ~ "exotic",
+    endsWith(commonName, "Sea lamprey") ~ "exotic",
+    endsWith(commonName, "Chinook salmon") ~ "exotic",
+    endsWith(commonName, "Rainbow trout (Steelhead)") ~ "exotic",
+    endsWith(commonName, "Carp") ~ "exotic",
+    endsWith(commonName, "Brown trout") ~ "exotic",
+    endsWith(commonName, "Rainbow smelt") ~ "exotic",
+    endsWith(commonName, "Coho salmon") ~ "exotic",
+    endsWith(commonName, "White perch") ~ "exotic",
+    endsWith(commonName, "Blueback herring") ~ "exotic", 
+    endsWith(commonName, "Chain pickerel") ~ "exotic",
+    endsWith(commonName, "Round goby") ~ "exotic",
+    endsWith(commonName, "Tubenose goby") ~ "exotic",
+    endsWith(commonName, "Threespine stickleback") ~ "native",
+    endsWith(commonName, "Emerald shiner") ~ "native",
+    endsWith(commonName, "Lake whitefish") ~ "native",
+    endsWith(commonName, "Deepwater sculpin") ~ "native",
+    endsWith(commonName, "Lake trout") ~ "native",
+    endsWith(commonName, "Burbot") ~ "native",
+    endsWith(commonName, "Slimy sculpin") ~ "native",
+    endsWith(commonName, "Emerald shiner") ~ "native",
+    endsWith(commonName, "Cisco (lake herring)") ~ "native",
+    endsWith(commonName, "Whitefishes") ~ "native",
+    endsWith(commonName, "Johnny darter") ~ "native",  
+    endsWith(commonName, "Trout-perch") ~ "native", 
+    endsWith(commonName, "Yellow perch") ~ "native", 
+    endsWith(commonName, "Spottail shiner") ~ "native"
+    ))
+fish.data.exonat %>% 
+  filter(is.na(inv.status)) %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n))
+#Checking to see which ones I hadn't researched yet to make sure I did not miss any important ones.
+#Dreissena are mussels and we are only focused on fishes so we will be cutting those out anyway
+#We ignore everything below 200 observations on this list because they do not have enough observations to be included in our data
+fish.data.exonat %>%  #now that we have labeled each species, we can display our native species of interest. 
+  filter(inv.status=="native") %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n))
+#based on this, we can choose only species with more than 300 observations. In this case that means Yellow perch, Threespine stickleback, Deepwater sculpin, Trout-perch, Johnny darter, Lake trout, and Slimy sculpin.
+```
+
+Our data for which species were exotic came from here: https://www-sciencedirect-com.myaccess.library.utoronto.ca/science/article/pii/S0380133019301637
+http://www.glfc.org/pubs/TechReports/Tr67.pdf 
+https://librarysearch.library.utoronto.ca/permalink/01UTORONTO_INST/fedca1/cdi_gale_infotracacademiconefile_A484511028 
+
+###Creating cleaned data set
+```{r Cleaning data 2}
+fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested in, including only the species that we are able to look at.
+  filter(commonName=="Yellow perch" | commonName=="Threespine stickleback" | commonName=="Deepwater sculpin" | commonName=="Trout-perch" | commonName=="Johnny darter" | commonName=="Lake trout" | commonName=="Slimy sculpin" | commonName=="Round goby")
+```
+
 ###Cleaning: Change the format of date column to YYYY-MM-DD
 ```{r}
 fish.data.clean2 <- fish.data.clean
@@ -135,7 +198,10 @@ we can see that the majority of the catch was either the Threespine Stickleback 
 
 
 
-```{r}
+```{r, include=FALSE}
+# install.packages("ape")
+# install.packages("terra")
+# install.packages("sf")
 library(ape)
 library(MuMIn)
 library(nlme)
@@ -152,10 +218,12 @@ fish.data.cleaned <- fish.data.clean2 %>%
 
 # cluster analysis 
 ```{r}
-library("sp")
+library(sp)
 ```
 ```{r}
 # Native and Exotic Speices identification, and where they were found in lake Ontario
+lakes <- map_data("lakes")
+lake_ontario<- subset(lakes, subregion %in% c("Ontario"))
 ggplot(data=fish.data.clean) +
   geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
   geom_point(data=fish.data.cleaned, aes(x=longitude, y=latitude, colour=inv.status)) + labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
@@ -232,7 +300,7 @@ fish.data.clean2.threespinestickleback <- fish.data.clean2 %>%
 ```
 ```{r}
 #round goby
-roundgoby.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
+roundgoby.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
 roundgoby.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
 ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -278,7 +346,7 @@ summary(yellowperch.mixed.model.mass)
 ```
 ```{r}
 #deepwater sculpin
-deepwatersculpin.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
+deepwatersculpin.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
 deepwatersculpin.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
 ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -301,7 +369,7 @@ summary(deepwatersculpin.mixed.model.mass)
 ```
 ```{r}
 #trout perch
-troutperch.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
+troutperch.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
 troutperch.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
 ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -324,8 +392,8 @@ summary(troutperch.mixed.model.mass)
 ```
 ```{r}
 #johnny darter
-johnnydarter.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
-johnnydarter.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.mass <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
 ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -347,8 +415,8 @@ summary(johnnydarter.mixed.model.mass)
 ```
 ```{r}
 #lake trout
-laketrout.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
-laketrout.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+laketrout.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+laketrout.mixed.model.mass <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
 ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method="lm")+
@@ -370,8 +438,8 @@ summary(laketrout.mixed.model.mass)
 ```
 ```{r}
 #slimy sculpin
-slimysculpin.mixed.model.abundance <- lmer(n ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
-slimysculpin.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.mixed.model.mass <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
 summary(slimysculpin.mixed.model.abundance)
 summary(slimysculpin.mixed.model.mass)
 ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=n)) +
@@ -464,7 +532,7 @@ fish.data.wider <- fish.data.wider2 %>%
 ```
 
 ```{r}
-slimysculpin.result <- lm(slimy.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),])
+slimysculpin.result <- lm(log10(slimy.sculpin+1)~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),])
 summary(slimysculpin.result)
 ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=slimy.sculpin)) +
@@ -478,7 +546,7 @@ ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$r
 ```
 
 ```{r}
-laketrout.result <- lm(lake.trout~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),])
+laketrout.result <- lm(log10(lake.trout+1)~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),])
 summary(laketrout.result)
 ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=lake.trout)) +
@@ -492,8 +560,8 @@ ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$roun
 ```
 
 ```{r}
-johnnydarter.result <- lm(johnny.darter~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
-summary(troutperch.result)
+johnnydarter.result <- lm(log10(johnny.darter+1)~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
+summary(johnnydarter.result)
 ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=johnny.darter)) +
   geom_point(alpha = 0.2) +
@@ -506,7 +574,7 @@ ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$r
 ```
 
 ```{r}
-troutperch.result <- lm(trout.perch~round.goby, data=fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),])
+troutperch.result <- lm(log10(trout.perch+1)~round.goby, data=fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),])
 summary(troutperch.result)
 ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=trout.perch)) +
@@ -520,7 +588,7 @@ ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$rou
 ```
 
 ```{r}
-yellowperch.result <- lm(yellow.perch~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),])
+yellowperch.result <- lm(log10(yellow.perch+1)~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),])
 summary(yellowperch.result)
 ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=yellow.perch)) +
@@ -534,7 +602,7 @@ ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$ro
 ```
 
 ```{r}
-threespinestickleback.result <- lm(threespine.stickleback~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
+threespinestickleback.result <- lm(log10(threespine.stickleback+1)~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
 summary(threespinestickleback.result)
 ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=threespine.stickleback)) +
@@ -548,7 +616,7 @@ ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.dat
 ```
 
 ```{r}
-deepwatersculpin.result <- lm(deepwater.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
+deepwatersculpin.result <- lm(log10(deepwater.sculpin+1)~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
 summary(deepwatersculpin.result)
 ggplot(fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=deepwater.sculpin)) +
@@ -573,9 +641,115 @@ ggplot(fish.data.wider,
   scale_x_discrete(breaks=c(seq(1970,2022,5))) 
 ```
 
+
+# ASSUMPTION CHECK (Linear Models)
+```{r}
+# slimysculpin
+slimysculpin.result.log <- lm(log10(slimy.sculpin+1)~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),])
+plot(slimysculpin.result.log, 1:2)
+```
+
+```{r}
+# lake trout
+laketrout.result.log <- lm(log10(lake.trout+1)~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),])
+plot(laketrout.result.log, 1:2)
+```
+
+```{r}
+# johnny darter
+johnnydarter.result.log <- lm(log10(johnny.darter+1)~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
+plot(johnnydarter.result.log, 1:2)
+```
+
+```{r}
+# trout perch
+troutperch.result.log <- lm(log10(trout.perch+1)~round.goby, data=fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),])
+plot(troutperch.result.log, 1:2)
+```
+
+```{r}
+# yellow perch
+yellowperch.result.log <- lm(log10(yellow.perch+1)~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),])
+plot(yellowperch.result.log, 1:2)
+```
+
+```{r}
+# threespine stickleback
+threespinestickleback.result.log <- lm(log10(threespine.stickleback+1)~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
+plot(threespinestickleback.result.log, 1:2)
+```
+
+```{r}
+# deepwater sculpin
+deepwatersculpin.result.log <- lm(log10(deepwater.sculpin+1)~round.goby, data=fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 | fish.data.wider$round.goby>0),])
+plot(deepwatersculpin.result.log, 1:2)
+```
+
+# ASSUMPTION CHECK (Mixed Models)
+```{r}
+roundgoby.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
+plot(roundgoby.mixed.model.abundance.log)
+qqnorm(residuals(roundgoby.mixed.model.abundance.log))
+plot(roundgoby.mixed.model.mass)
+qqnorm(residuals(roundgoby.mixed.model.mass))
+```
+```{r}
+yellowperch.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
+yellowperch.mixed.model.mass.log <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
+plot(yellowperch.mixed.model.abundance.log)
+qqnorm(residuals(yellowperch.mixed.model.abundance.log))
+plot(yellowperch.mixed.model.mass.log)
+qqnorm(residuals(yellowperch.mixed.model.mass.log))
+```
+```{r}
+deepwatersculpin.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.deepwatersculpin)
+plot(deepwatersculpin.mixed.model.abundance.log)
+qqnorm(residuals(deepwatersculpin.mixed.model.abundance.log))
+plot(deepwatersculpin.mixed.model.mass)
+qqnorm(residuals(deepwatersculpin.mixed.model.mass))
+```
+```{r}
+troutperch.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.troutperch)
+plot(troutperch.mixed.model.abundance.log)
+qqnorm(residuals(troutperch.mixed.model.abundance.log))
+plot(troutperch.mixed.model.mass)
+qqnorm(residuals(troutperch.mixed.model.mass))
+```
+```{r}
+johnnydarter.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.mass.log <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+plot(johnnydarter.mixed.model.abundance.log)
+qqnorm(residuals(johnnydarter.mixed.model.abundance.log))
+plot(johnnydarter.mixed.model.mass.log)
+qqnorm(residuals(johnnydarter.mixed.model.mass.log))
+```
+```{r}
+laketrout.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+laketrout.mixed.model.mass.log <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.laketrout)
+plot(laketrout.mixed.model.abundance.log)
+qqnorm(residuals(laketrout.mixed.model.abundance.log))
+plot(laketrout.mixed.model.mass.log)
+qqnorm(residuals(laketrout.mixed.model.mass.log))
+```
+```{r}
+slimysculpin.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.mixed.model.mass.log <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.slimysculpin)
+plot(slimysculpin.mixed.model.abundance.log)
+qqnorm(residuals(slimysculpin.mixed.model.abundance.log))
+plot(slimysculpin.mixed.model.mass.log)
+qqnorm(residuals(slimysculpin.mixed.model.mass.log))
+```
+```{r}
+plot(threespinestickleback.mixed.model.abundance)
+qqnorm(residuals(threespinestickleback.mixed.model.abundance))
+plot(threespinestickleback.mixed.model.mass)
+qqnorm(residuals(threespinestickleback.mixed.model.mass))
+```
+
+
+
+
 #to do list
-check assumptions on the models we ran
-make presentation
-finish presentation notes
 Check that we have met all the requirements for the presentation
 annotate code with explanations
+work on report
