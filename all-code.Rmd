@@ -234,8 +234,8 @@ ggplot(fish.data.clean2, aes(x=fishingTemperature_C, y=weight_g, color=commonNam
 
 ```{r Temperature on Round Goby}
 #making the linear models
-roundgoby.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.roundgoby)
-roundgoby.linear.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.roundgoby)
+roundgoby.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.roundgoby)
+roundgoby.linear.model.mass <-lm(average_weight ~ fishingTemperature_C , data=fish.data.clean2.roundgoby)
 #graphing the results
 ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -262,8 +262,8 @@ plot(roundgoby.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Yellow Perch}
 #making the linear models
-yellowperch.linear.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.yellowperch)
-yellowperch.linear.model.mass <-lm(log(average_weight) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.yellowperch)
+yellowperch.linear.model.abundance <- lm(n ~ fishingTemperature_C , data=fish.data.clean2.yellowperch)
+yellowperch.linear.model.mass <-lm(log(average_weight) ~ fishingTemperature_C , data=fish.data.clean2.yellowperch)
 #Plotting the results
 ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -290,8 +290,8 @@ plot(yellowperch.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Deepwater Sculpin}
 #Making the linear models
-deepwatersculpin.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.deepwatersculpin)
-deepwatersculpin.linear.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.deepwatersculpin)
+deepwatersculpin.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.deepwatersculpin)
+deepwatersculpin.linear.model.mass <-lm(average_weight ~ fishingTemperature_C , data=fish.data.clean2.deepwatersculpin)
 #plotting the results
 ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -318,8 +318,8 @@ plot(deepwatersculpin.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Trout Perch}
 #making the models
-troutperch.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.troutperch)
-troutperch.linear.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.troutperch)
+troutperch.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.troutperch)
+troutperch.linear.model.mass <-lm(average_weight ~ fishingTemperature_C , data=fish.data.clean2.troutperch)
 #graphing the results
 ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -346,8 +346,8 @@ plot(troutperch.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Johnny Darter}
 #making linear models
-johnnydarter.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.johnnydarter)
-johnnydarter.linear.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.johnnydarter)
+johnnydarter.linear.model.mass <-lm(average_weight ~ fishingTemperature_C , data=fish.data.clean2.johnnydarter)
 #plotting the results
 ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -374,8 +374,8 @@ plot(johnnydarter.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Lake Trout}
 #Making linear models
-laketrout.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.laketrout)
-laketrout.linear.model.mass <-lm(log(average_weight) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.laketrout)
+laketrout.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.laketrout)
+laketrout.linear.model.mass <-lm(log(average_weight) ~ fishingTemperature_C , data=fish.data.clean2.laketrout)
 #plotting results
 ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -402,8 +402,8 @@ plot(laketrout.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Slimy Sculpin}
 #making the models
-slimysculpin.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.slimysculpin)
-slimysculpin.linear.model.mass <-lm(log(average_weight) ~ fishingTemperature_C, REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.slimysculpin)
+slimysculpin.linear.model.mass <-lm(log(average_weight) ~ fishingTemperature_C , data=fish.data.clean2.slimysculpin)
 #graphing the results
 ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -430,8 +430,8 @@ plot(slimysculpin.linear.model.mass, 1:2)
 ```
 ```{r Temperature on Threespine Stickleback}
 #making the models
-threespinestickleback.linear.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.threespinestickleback)
-threespinestickleback.linear.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.threespinestickleback)
+threespinestickleback.linear.model.abundance <- lm(log(n) ~ fishingTemperature_C , data=fish.data.clean2.threespinestickleback)
+threespinestickleback.linear.model.mass <-lm(average_weight ~ fishingTemperature_C , data=fish.data.clean2.threespinestickleback)
 #plotting the results
 ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=n)) +
   geom_point(alpha = 0.2) +
@@ -612,10 +612,10 @@ plot(deepwatersculpin.result, 1:2)
 
 # Mixed Effect Models
 ```{r}
-johnnydarter.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster) , data=fish.data.clean2.johnnydarter)
 summary(johnnydarter.mixed.model.abundance) 
 # residual variance(of random effects): 0.005651 / (0.005651+0.176330)= 3.11%
-johnnydarter.mixed.model.mass <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.mass <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster) , data=fish.data.clean2.johnnydarter)
 summary(johnnydarter.mixed.model.mass) 
 # residual variance(of random effects): 0.005651 / (0.005651+0.176330)= 3.11%
 ```
@@ -626,3 +626,4 @@ did not proceed with mixed effect models
 
 ```{r Plotting for Final Paper}
 ggarrange(slimysculpin.abun, threespinestickleback.abun, yellowperch.abun, deepwatersculpin.abun, troutperch.abun, johnnydarter.abun,laketrout.abun, ncol=2,nrow=3, align = "v")
+```
