@@ -1,0 +1,616 @@
+---
+title: "Data Exploration Code with Explanations"
+output: html_notebook
+---
+#Setup
+```{r Setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(ggfortify)
+library(tidyverse)
+library(ggalt)
+library(maps)
+library(lme4)
+library(lmerTest)
+library(ape)
+library(MuMIn)
+library(nlme)
+library(terra)
+library(sf)
+library(maps)
+library(sp)
+```
+#Cleaning Data
+```{r Cleaning Data}
+fish.data.raw <- read.csv("TrawlCatch_SpringPreyfishBottomTrawl.csv")
+head(fish.data.raw)
+fish.data.raw <- fish.data.raw %>% 
+  mutate(year=as.factor(year)) #didn't want year to be a continuous variable, I wanted them as discrete values not continuous.
+fish.data <- fish.data.raw %>% 
+  filter(!is.na(fishingTemperature_C), !is.na(latitude), !is.na(longitude), commonName!= "No fish caught", commonName!= "Miscellaneous or unidentified species", commonName!=  "Unidentified coregonid", commonName!= "Unidentified minnows",  commonName!= "Uninidentified redhorse")#I am removing any datapoints where the temperature, latitude, or longitude is not collected because they will not be useful for the questions we are asking unless we have those data
+#I am also removing unidentified or misc. fishes
+```
+##Choosing focal species
+```{r Choosing Native Species}
+fish.data %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n)) #this helped us see how many observations we had per species 
+fish.list <- as.data.frame(unique(fish.data$commonName)) #this just made a data frame of the list so we could check if each one was exotic or native
+fish.data.exonat <- fish.data %>% #Here we made a new column that marks each fish species as exotic or native. This was based on a few papers listed in our methods. We did not bother doing this for any fishes where there were less than 200 observations because they would not be used for this analysis anyway. We also did not do this for non-fish species as they are not the focus of this analysis. 
+  mutate(inv.status = case_when(
+    endsWith(commonName, "Alewife") ~ "exotic",
+    endsWith(commonName, "Sea lamprey") ~ "exotic",
+    endsWith(commonName, "Chinook salmon") ~ "exotic",
+    endsWith(commonName, "Rainbow trout (Steelhead)") ~ "exotic",
+    endsWith(commonName, "Carp") ~ "exotic",
+    endsWith(commonName, "Brown trout") ~ "exotic",
+    endsWith(commonName, "Rainbow smelt") ~ "exotic",
+    endsWith(commonName, "Coho salmon") ~ "exotic",
+    endsWith(commonName, "White perch") ~ "exotic",
+    endsWith(commonName, "Blueback herring") ~ "exotic", 
+    endsWith(commonName, "Chain pickerel") ~ "exotic",
+    endsWith(commonName, "Round goby") ~ "exotic",
+    endsWith(commonName, "Tubenose goby") ~ "exotic",
+    endsWith(commonName, "Threespine stickleback") ~ "native",
+    endsWith(commonName, "Emerald shiner") ~ "native",
+    endsWith(commonName, "Lake whitefish") ~ "native",
+    endsWith(commonName, "Deepwater sculpin") ~ "native",
+    endsWith(commonName, "Lake trout") ~ "native",
+    endsWith(commonName, "Burbot") ~ "native",
+    endsWith(commonName, "Slimy sculpin") ~ "native",
+    endsWith(commonName, "Emerald shiner") ~ "native",
+    endsWith(commonName, "Cisco (lake herring)") ~ "native",
+    endsWith(commonName, "Whitefishes") ~ "native",
+    endsWith(commonName, "Johnny darter") ~ "native",  
+    endsWith(commonName, "Trout-perch") ~ "native", 
+    endsWith(commonName, "Yellow perch") ~ "native", 
+    endsWith(commonName, "Spottail shiner") ~ "native"
+    ))
+fish.data.exonat %>% 
+  filter(is.na(inv.status)) %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n))
+#Checking to see which ones I hadn't researched yet to make sure I did not miss any important ones.
+#Dreissena are mussels and we are only focused on fishes so we will be cutting those out anyway
+#We ignore everything below 200 observations on this list because they do not have enough observations to be included in our data
+fish.data.exonat %>%  #now that we have labeled each species, we can display our native species of interest. 
+  filter(inv.status=="native") %>% 
+  group_by(commonName) %>% 
+  tally() %>% 
+  arrange(desc(n))
+#based on this, we can choose only species with more than 300 observations. In this case that means Yellow perch, Threespine stickleback, Deepwater sculpin, Trout-perch, Johnny darter, Lake trout, and Slimy sculpin.
+```
+
+Our data for which species were exotic came from here: https://www-sciencedirect-com.myaccess.library.utoronto.ca/science/article/pii/S0380133019301637
+http://www.glfc.org/pubs/TechReports/Tr67.pdf 
+https://librarysearch.library.utoronto.ca/permalink/01UTORONTO_INST/fedca1/cdi_gale_infotracacademiconefile_A484511028 
+```{r Removing extra species}
+fish.data.clean <- fish.data.exonat %>% #this is now the data we are interested in, including only the species that we are able to look at.
+  filter(commonName=="Yellow perch" | commonName=="Threespine stickleback" | commonName=="Deepwater sculpin" | commonName=="Trout-perch" | commonName=="Johnny darter" | commonName=="Lake trout" | commonName=="Slimy sculpin" | commonName=="Round goby")
+```
+
+```{r Change the format of date column to YYYY-MM-DD}
+fish.data.clean2 <- fish.data.clean
+fish.data.clean <- fish.data.clean2 %>%
+  group_by(opDate) %>%
+  mutate(opDate = paste0(substr(opDate,1,4), "-", substr(opDate,5,6), "-", substr(opDate,7,8))) %>% 
+  as.data.frame(mutate(opDate = as.character(opDate)))
+```
+
+#Data Exploration
+```{r Temperature Plot}
+unique(fish.data$year) #we have data from 1997 to 2022
+ggplot(fish.data, aes(x=opDate, y=fishingTemperature_C)) + geom_point(alpha=0.1) + geom_smooth() + labs(title="Temperature values by date", x="Date (YYYYMMDD)", y="Temperature (Degrees C)") + theme(plot.title = element_text(hjust = 0.5)) #plotting the temperature over time
+```
+
+This graph just shows temperature changes over time. We don't expect them to vary much, but its good to take a look regardless to see if there is variation in temperature at all. There does seem to be variation which will be important for our analyses. Also, I used the clean data because we needed to confirm that there was variation in the data we will actually use, not just in the original data. If, for example, all the temperatures were the same, we likely wouldn't be able to make any conclusions about the temperature ranges of these fishes. 
+```{r Checking temperature effects visually}
+ggplot(fish.data.clean, aes(x=fishingTemperature_C, fill=inv.status)) + geom_histogram(bins=15) + facet_wrap(~commonName) + labs(title="Observed temperature by species", x="Temperature (Degrees C)", y="Count of individuals observed") + theme(plot.title = element_text(hjust = 0.5)) + scale_fill_discrete(name = "Status")
+#plotting the count of observations of each species depending on the temperature.
+```
+
+Just based on the visual that this graph provides it looks like there's a variety of temperature tolerances among our focal species. It seems like the round goby does not exist at much higher temperatures than the other species. We will still have to run our analysis to confirm this, but there appears to be little difference in temperature tolerance of the round goby in comparison to the other native species. Interestingly, some of these species (like the yellow perch, trout perch, and lake trout) have an even wider temperature range than the round goby. Others, like the slimy sculpin, have a narrower range and seem to be mostly found at one location. It should be noted, as well, that these data are counts so it simply be that the slimy sculpin is just more commonly observed which is why it would have such a narrow peak.
+
+```{r plotting proportion of catch by species }
+# Proportion of the total catch from the first occurance of the Round Goby in 1997 
+fish.data.clean
+fish.data.clean %>% 
+  group_by(commonName, year) %>% 
+  # filtering out year based on first time a goby was sighted --> in 1997
+  filter(year %in% seq(1997, 2022)) %>% 
+  tally(n) %>%  # tallying up occurances of each species
+  ggplot(aes(x=year, y=n, fill=commonName)) + geom_bar(position="fill", stat="identity") + labs(title="Proportion of Catch By Species", x="Year of Study", y="Proportion of catch") + theme(axis.text.x = element_text(angle=90, hjust=1)) 
+```
+
+By plotting the proportion of the yearly catch by species, we can see some pretty intesting details. At the very beginning of the introduction of the Round Goby, 
+we can see that the majority of the catch was either the Threespine Stickleback or the Slimy Sculpin; both benthic species that occupy a similar niche to the Round goby. As the study progressed, the Round Goby became a greater and greater proporition of the catch, while catches of native fish including the Threespine Stickleback and the Slimy Sculpin were observed less and less. 
+
+```{r}
+fish.data.cleaned <- fish.data.clean2 %>% 
+  select(-c("serial", "towTime_min",  "speed_mpsec", "wingSpreadModeled_m" , "extraBottomContactTime_sec",
+            "areaSampledDoors_m2", "lifeStageName",  "commonName"))
+```
+
+#Identifying Sites
+```{r}
+# Native and Exotic Speices identification, and where they were found in lake Ontario
+lakes <- map_data("lakes")
+lake_ontario<- subset(lakes, subregion %in% c("Ontario"))
+ggplot(data=fish.data.clean) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.cleaned, aes(x=longitude, y=latitude, colour=inv.status)) + labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
+```
+
+```{r}
+# k-means clustering 
+kclust <- fish.data.clean %>% 
+  dplyr::select(longitude, latitude) %>% 
+  kmeans(centers = 25, iter.max = 100, nstart=10)
+# adding cluster nukmber to original data 
+fish.data.clean2 <- broom::augment(kclust, fish.data.clean)
+head(fish.data.clean2)  # updated dataframe with site names under ".cluster" col
+# map representation; clustering around the black encirclements, as well as 
+# identified by number; shapes identifies whether observation is a native species
+# or the Round goby
+lakes <- map_data("lakes")
+lake_ontario<- subset(lakes, subregion %in% c("Ontario"))
+ggplot(data=fish.data.clean2) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster, shape = inv.status)) + geom_encircle(aes(x=longitude, y=latitude, group=.cluster)) + 
+  labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
+```
+```{r}
+# Representation without geom_encircle
+ggplot(data=fish.data.clean2) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster, shape = inv.status))+
+  labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude")
+```
+```{r}
+# Representation without geom_encircle
+ggplot(data=fish.data.clean2) +
+  geom_polygon(data=lake_ontario, aes(x=long, y=lat, group=group), fill="cyan4")+
+  geom_point(data=fish.data.clean2, aes(x=longitude, y=latitude, colour=.cluster))+
+  labs(title= "Captured Species and Location Within Lake Ontario", x="Longitude", y="Latitude") + 
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+#Temperature Effects
+Here we are examining how temperature affects each species both in terms of abudance and mass. 
+We are using mixed models because we want to add a random effect of site to each one. 
+```{r}
+#creating data sets that just include the fish that I want so that I can compare
+fish.data.clean2.roundgoby <- fish.data.clean2 %>% 
+  filter(commonName=="Round goby") %>% 
+  mutate("average_weight" = weight_g/n) #we are dividing by n because they currently have the total for all the fish found at that site so we want the average weight of each fish, not the total mass of fish
+fish.data.clean2.yellowperch <- fish.data.clean2 %>% 
+  filter(commonName=="Yellow perch") %>% 
+   mutate("average_weight" = weight_g/n)
+fish.data.clean2.deepwatersculpin <- fish.data.clean2 %>% 
+  filter(commonName=="Deepwater sculpin") %>% 
+   mutate("average_weight" = weight_g/n)
+fish.data.clean2.troutperch <- fish.data.clean2 %>% 
+  filter(commonName=="Trout-perch") %>% 
+   mutate("average_weight" = weight_g/n)
+fish.data.clean2.johnnydarter <- fish.data.clean2 %>% 
+  filter(commonName=="Johnny darter") %>% 
+   mutate("average_weight" = weight_g/n)
+fish.data.clean2.laketrout <- fish.data.clean2 %>% 
+  filter(commonName=="Lake trout") %>% 
+   mutate("average_weight" = weight_g/n)
+fish.data.clean2.slimysculpin <- fish.data.clean2 %>% 
+  filter(commonName=="Slimy sculpin") %>% 
+   mutate("average_weight" = weight_g/n)
+fish.data.clean2.threespinestickleback <- fish.data.clean2 %>% 
+  filter(commonName=="Threespine stickleback") %>% 
+   mutate("average_weight" = weight_g/n)
+```
+```{r Summary Graphs}
+#these graphs are for the final paper
+ggplot(fish.data.clean2, aes(x=fishingTemperature_C, y=n, color=commonName)) +
+  scale_y_log10() + #log scaled y beacuse it's hard to see the lines otherwise
+  stat_smooth (geom="line", method="lm", size=1, span=0.5) + 
+  theme_classic() +
+  geom_point(alpha=0.02) + #using a low alpha because there are a lot of points
+  ggtitle("Abundance of Native Species Changes with Temperature") +
+  ylab("Native Fish Abundance")+
+  xlab("Fishing Temperature (degrees celsius)") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+    facet_wrap(vars(commonName)) #facetwrapping so each species has its own graph - otherwise there's too much overlap
+#doing the same thing except for the mass instead of the abundance:
+ggplot(fish.data.clean2, aes(x=fishingTemperature_C, y=weight_g, color=commonName)) +
+  scale_y_log10() +
+  stat_smooth (geom="line", method="lm", size=1, span=0.5) +
+  theme_classic() +
+  geom_point(alpha=0.02) +
+  ggtitle("Average Mass of Native Species Changes with Temperature") +
+  ylab("Average Mass (grams)")+
+  xlab("Fishing Temperature (degrees celsius)") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+    facet_wrap(vars(commonName)) 
+```
+
+```{r Temperature on Round Goby}
+#making the mixed models
+roundgoby.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.roundgoby)
+roundgoby.mixed.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.roundgoby)
+#graphing the results
+ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Round goby abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.roundgoby, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Average Round goby Weight by temperature") +
+  ylab("Average Weight (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#viewing results
+summary(roundgoby.mixed.model.abundance)
+summary(roundgoby.mixed.model.mass)
+#Checking Assumptions
+plot(roundgoby.mixed.model.abundance, 1:2)
+plot(roundgoby.mixed.model.mass, 1:2)
+```
+```{r Temperature on Yellow Perch}
+#making the mixed models
+yellowperch.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.yellowperch)
+yellowperch.mixed.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.yellowperch)
+#Plotting the results
+ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Yellow perch abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.yellowperch, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Yellow perch mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#viewing the results
+summary(yellowperch.mixed.model.abundance)
+summary(yellowperch.mixed.model.mass)
+#Checking Assumptions
+plot(yellowperch.mixed.model.abundance, 1:2)
+plot(yellowperch.mixed.model.mass, 1:2)
+```
+```{r Temperature on Deepwater Sculpin}
+#Making the mixed models
+deepwatersculpin.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.deepwatersculpin)
+deepwatersculpin.mixed.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.deepwatersculpin)
+#plotting the results
+ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Deepwater sculpin abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.deepwatersculpin, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Average Deepwater sculpin Weight by temperature") +
+  ylab("Weight (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#Summarizing results
+summary(deepwatersculpin.mixed.model.abundance)
+summary(deepwatersculpin.mixed.model.mass)
+#Checking Assumptions
+plot(deepwatersculpin.mixed.model.abundance, 1:2)
+plot(deepwatersculpin.mixed.model.mass, 1:2)
+```
+```{r Temperature on Trout Perch}
+#making the models
+troutperch.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.troutperch)
+troutperch.mixed.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.troutperch)
+#graphing the results
+ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Trout perch abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.troutperch, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Trout perch mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#summarizing results
+summary(troutperch.mixed.model.abundance)
+summary(troutperch.mixed.model.mass)
+#Checking Assumptions
+plot(troutperch.mixed.model.abundance, 1:2)
+plot(troutperch.mixed.model.mass, 1:2)
+```
+```{r Temperature on Johnny Darter}
+#making mixed models
+johnnydarter.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.johnnydarter)
+johnnydarter.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.johnnydarter)
+#plotting the results
+ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Johnny darter abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.johnnydarter, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Average Johnny darter Weight by temperature") +
+  ylab("Weight (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#summarizing the results
+summary(johnnydarter.mixed.model.abundance)
+summary(johnnydarter.mixed.model.mass)
+#Checking Assumptions
+plot(johnnydarter.mixed.model.abundance, 1:2)
+plot(johnnydarter.mixed.model.mass, 1:2)
+```
+```{r Temperature on Lake Trout}
+#Making Mixed Models
+laketrout.mixed.model.abundance <- lmer(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.laketrout)
+laketrout.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.laketrout)
+#plotting results
+ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Lake trout abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.laketrout, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Average Lake trout Weight by temperature") +
+  ylab("Weight (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#summarizing results
+summary(laketrout.mixed.model.abundance)
+summary(laketrout.mixed.model.mass)
+#Checking Assumptions
+plot(laketrout.mixed.model.abundance, 1:2)
+plot(laketrout.mixed.model.mass, 1:2)
+```
+```{r Temperature on Slimy Sculpin}
+#making the models
+slimysculpin.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.slimysculpin)
+slimysculpin.mixed.model.mass <-lmer(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.slimysculpin)
+#graphing the results
+ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Slimy sculpin abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.slimysculpin, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Average Slimy sculpin Weight by temperature") +
+  ylab("Weight (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#summarizing the results
+summary(slimysculpin.mixed.model.abundance)
+summary(slimysculpin.mixed.model.mass)
+#Checking Assumptions
+plot(slimysculpin.mixed.model.abundance, 1:2)
+plot(slimysculpin.mixed.model.mass, 1:2)
+```
+```{r Temperature on Threespine Stickleback}
+#making the models
+threespinestickleback.mixed.model.abundance <- lm(n ~ fishingTemperature_C, REML = F, data=fish.data.clean2.threespinestickleback)
+threespinestickleback.mixed.model.mass <-lm(average_weight ~ fishingTemperature_C, REML = F, data=fish.data.clean2.threespinestickleback)
+#plotting the results
+ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=n)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Threespine stickleback abundance by temperature") +
+  ylab("Number observed")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+ggplot(fish.data.clean2.threespinestickleback, aes(x=fishingTemperature_C, y=average_weight)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ggtitle("Threespine stickleback mass by temperature") +
+  ylab("Mass (grams)")+
+  xlab("Temperature (degrees C)") +
+  theme(plot.title = element_text(hjust = 0.5))
+#summarzing the results
+summary(threespinestickleback.mixed.model.abundance)
+summary(threespinestickleback.mixed.model.mass)
+#Checking Assumptions
+plot(threespinestickleback.mixed.model.abundance, 1:2)
+plot(threespinestickleback.mixed.model.mass, 1:2)
+```
+
+
+#Round Goby Abundance Effects
+Note: anywhere where the data did not meet assumptions we log transformed the data so that it was normal and then re-checked them
+```{r Setting up wide data}
+fish.data.clean2$year <- as.numeric(as.character(fish.data.clean2$year)) #changing to numeric data so that I can use it here
+fish.data.grouped <- as.data.frame(fish.data.clean2) %>% 
+  filter(year>2001) %>% #filtering for the years where the round goby was present - eveyrthing before that is not really useful here
+  select(-c("fishingTemperature_C","weight_g","inv.status","vesselName", "serial", "latitude", "longitude", "fishingDepth_m", "towTime_min", "speed_mpsec", "wingSpreadModeled_m", "extraBottomContactTime_sec", "areaSampledDoors_m2", "lifeStageName", "opDate", "opId")) %>% #removing columns we don't need
+  group_by(year, .cluster, commonName) %>% 
+  mutate(sum.n=sum(n)) %>% #summing the number of fish per site per year for each species
+  arrange(year, .cluster)
+fish.data.grouped <- distinct(fish.data.grouped, year,.cluster, .keep_all= TRUE)
+# use data.table to sum up weight and abundances for each species in every site
+# every year 
+fish.data.wider2 <- fish.data.grouped %>% 
+  pivot_wider(names_from = commonName, values_from = sum.n) #making the wide data
+fish.data.wider2 <- as.data.frame(fish.data.wider2) #making sure its a data frame
+fish.data.wider2[is.na(fish.data.wider2)] <- 0 #replacing any NA with 0 because that just means they didn't find that fish
+#renaming all the columns so they're less annoying to call later
+names(fish.data.wider2)[names(fish.data.wider2)== "Slimy sculpin"] <- "slimy.sculpin"
+names(fish.data.wider2)[names(fish.data.wider2)== "Lake trout"] <- "lake.trout"
+names(fish.data.wider2)[names(fish.data.wider2)== "Johnny darter"] <- "johnny.darter"
+names(fish.data.wider2)[names(fish.data.wider2)== "Trout-perch"] <- "trout.perch"
+names(fish.data.wider2)[names(fish.data.wider2)== "Yellow perch"] <- "yellow.perch"
+names(fish.data.wider2)[names(fish.data.wider2)== "Threespine stickleback"] <- "threespine.stickleback"
+names(fish.data.wider2)[names(fish.data.wider2)== "Round goby"] <- "round.goby"
+names(fish.data.wider2)[names(fish.data.wider2)== "Deepwater sculpin"] <- "deepwater.sculpin"
+fish.data.wider <- fish.data.wider2 %>% 
+  group_by(year, .cluster) %>% 
+  summarise(across(c(slimy.sculpin,lake.trout,johnny.darter,trout.perch,yellow.perch,threespine.stickleback,round.goby,deepwater.sculpin),sum))
+```
+
+```{r RG on Slimy Sculpin}
+#making the model
+slimysculpin.result <- lm(slimy.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),]) #We removed all 0,0 values because they aren't needed for this - e.g. sites where no round goby and no slimy sculpin were found. We did this for all the species below as well.
+#we have also added a random effect of site to each of these models.
+summary(slimysculpin.result)
+#plotting the data
+slimysculpin.abun <- ggplot(fish.data.wider[which(fish.data.wider$slimy.sculpin>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=slimy.sculpin)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Slimy Sculpin Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(slimysculpin.result, 1:2)
+  
+```
+
+```{r RG on Lake Trout}
+#making the model
+laketrout.result <- lm(lake.trout~round.goby, data=fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),]) 
+summary(laketrout.result)
+#plotting the result
+laketrout.abun <- ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=lake.trout)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Lake Trout Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(laketrout.result, 1:2)
+```
+
+```{r RG on Johnny Darter}
+#making the model
+johnnydarter.result <- lm(johnny.darter~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
+summary(johnnydarter.result)
+#plotting the result
+johnnydarter.abun <- ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=johnny.darter)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Johnny Darter Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(johnnydarter.result, 1:2)
+```
+
+```{r RG on Troupt Perch}
+#making the model
+troutperch.result <- lm(trout.perch~round.goby  + (1|.cluster), data=fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),])
+summary(troutperch.result)
+#plotting the result
+troutperch.abun <- ggplot(fish.data.wider[which(fish.data.wider$trout.perch>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=trout.perch)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Trout Perch Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(troutperch.result, 1:2)
+```
+
+```{r RG on Yellow Perch}
+#making the model
+yellowperch.result <- lm(yellow.perch~round.goby, data=fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),])
+summary(yellowperch.result)
+#plotting the result
+yellowperch.abun <- ggplot(fish.data.wider[which(fish.data.wider$yellow.perch>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=yellow.perch)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Yellow Perch Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(yellowperch.result, 1:2)
+```
+
+```{r RG on Threespine Stickleback}
+#making the model
+threespinestickleback.result <- lm(threespine.stickleback~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
+summary(threespinestickleback.result)
+#plotting the result
+threespinestickleback.abun <- ggplot(fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=threespine.stickleback)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Stickleback Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(threespinestickleback.result, 1:2)
+```
+
+```{r RG on Deepwater Sculpin}
+#making the model
+deepwatersculpin.result <- lm(deepwater.sculpin~round.goby, data=fish.data.wider[which(fish.data.wider$threespine.stickleback>0 | fish.data.wider$round.goby>0),])
+summary(deepwatersculpin.result)
+#plotting the result
+deepwatersculpin.abun <- ggplot(fish.data.wider[which(fish.data.wider$deepwater.sculpin>0 | fish.data.wider$round.goby>0),],
+       aes(x=round.goby, y=deepwater.sculpin)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm")+
+  theme_classic() +
+  ylab("Deepwater Sculpin Abundance")+
+  xlab("Round Goby Abundance") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text (size=6), plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"))
+#Checking Assumptions
+plot(deepwatersculpin.result, 1:2)
+```
+
+```{r Plotting for Final Paper}
+ggarrange(slimysculpin.abun, threespinestickleback.abun, yellowperch.abun, deepwatersculpin.abun, troutperch.abun, johnnydarter.abun,laketrout.abun, ncol=2,nrow=3, align = "v")
+```
