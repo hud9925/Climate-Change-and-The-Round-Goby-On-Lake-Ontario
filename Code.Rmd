@@ -5,8 +5,13 @@ output: html_notebook
 
 ## Data Exploration 
 
+```{r, include=FALSE}
+# install.packages("tidyverse")
+# install.packages("ggalt")
+```
+
 ###Setup
-```{r Setup}
+```{r Setup, include=FALSE}
 library(ggplot2)
 library(dplyr)
 library(ggfortify)
@@ -17,7 +22,7 @@ library(lme4)
 library(lmerTest)
 ```
 ```{r Cleaning Data}
-fish.data.raw <- read.csv("TrawlCatch_SpringPreyfishBottomTrawl.csv")
+fish.data.raw <- read.csv("Dataset/TrawlCatch_SpringPreyfishBottomTrawl.csv")
 head(fish.data.raw)
 fish.data.raw <- fish.data.raw %>% 
   mutate(year=as.factor(year)) #didn't want year to be a continuous variable, I wanted them as discrete values not continuous.
@@ -488,6 +493,7 @@ summary(threespinestickleback.mixed.model.mass)
 ```{r}
 fish.data.lm <- fish.data.clean2 
 fish.data.grouped <- fish.data.lm %>% 
+
   group_by(.cluster) %>% 
   group_by(year) %>%
   mutate(sum.n=sum(n))
@@ -561,6 +567,8 @@ ggplot(fish.data.wider[which(fish.data.wider$lake.trout>0 | fish.data.wider$roun
 
 ```{r}
 johnnydarter.result <- lm(log10(johnny.darter+1)~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
+
+#johnnydarter.result <- lm(johnny.darter~round.goby, data=fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),])
 summary(johnnydarter.result)
 ggplot(fish.data.wider[which(fish.data.wider$johnny.darter>0 | fish.data.wider$round.goby>0),],
        aes(x=round.goby, y=johnny.darter)) +
@@ -690,8 +698,10 @@ plot(deepwatersculpin.result.log, 1:2)
 roundgoby.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.roundgoby)
 plot(roundgoby.mixed.model.abundance.log)
 qqnorm(residuals(roundgoby.mixed.model.abundance.log))
+
 plot(roundgoby.mixed.model.mass)
 qqnorm(residuals(roundgoby.mixed.model.mass))
+
 ```
 ```{r}
 yellowperch.mixed.model.abundance.log <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.yellowperch)
@@ -745,6 +755,7 @@ qqnorm(residuals(threespinestickleback.mixed.model.abundance))
 plot(threespinestickleback.mixed.model.mass)
 qqnorm(residuals(threespinestickleback.mixed.model.mass))
 ```
+
 
 
 
