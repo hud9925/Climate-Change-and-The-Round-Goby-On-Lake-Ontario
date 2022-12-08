@@ -610,5 +610,19 @@ deepwatersculpin.abun <- ggplot(fish.data.wider[which(fish.data.wider$deepwater.
 plot(deepwatersculpin.result, 1:2)
 ```
 
+# Mixed Effect Models
+```{r}
+johnnydarter.mixed.model.abundance <- lmer(log(n) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+summary(johnnydarter.mixed.model.abundance) 
+# residual variance(of random effects): 0.005651 / (0.005651+0.176330)= 3.11%
+johnnydarter.mixed.model.mass <-lmer(log(average_weight) ~ fishingTemperature_C + (1|.cluster), REML = F, data=fish.data.clean2.johnnydarter)
+summary(johnnydarter.mixed.model.mass) 
+# residual variance(of random effects): 0.005651 / (0.005651+0.176330)= 3.11%
+```
+As seen in the extremely low  residual variance as explained by the random effects(with 97% explained by fixed effects), we chose to ignore random effects and thus 
+did not proceed with mixed effect models 
+
+
+
 ```{r Plotting for Final Paper}
 ggarrange(slimysculpin.abun, threespinestickleback.abun, yellowperch.abun, deepwatersculpin.abun, troutperch.abun, johnnydarter.abun,laketrout.abun, ncol=2,nrow=3, align = "v")
