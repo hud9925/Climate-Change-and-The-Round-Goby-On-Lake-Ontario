@@ -4,4 +4,4 @@ The compounded impacts of both changing temperatures and invasive species Neogob
 
 
 
-[^1] https://www.sciencebase.gov/catalog/item/62f4fd46d34eacf53973a841
+[^1]: https://www.sciencebase.gov/catalog/item/62f4fd46d34eacf53973a841
